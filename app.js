@@ -29,28 +29,20 @@ function clearAuth() {
 }
 
 function showAdminUI(show) {
-    const adminSection = document.getElementById("adminSection");
-    const aboutSection = document.getElementById("about");
-    const contactSection = document.getElementById("contact");
-    const navAbout = document.getElementById("navAbout");
-    const navContact = document.getElementById("navContact");
-    const footerCompany = document.getElementById("footerCompany");
+    const storeView = document.getElementById("storeView");
+    const adminView = document.getElementById("adminView");
+    const adminUserName = document.getElementById("adminUserName");
+    const auth = getAuth();
+    const isAdmin = auth?.user?.role === "Admin";
 
-    if (show) {
-        if (adminSection) adminSection.style.display = "block";
-        if (aboutSection) aboutSection.style.display = "none";
-        if (contactSection) contactSection.style.display = "none";
-        if (navAbout) navAbout.style.display = "none";
-        if (navContact) navContact.style.display = "none";
-        if (footerCompany) footerCompany.style.display = "none";
+    if (show && isAdmin) {
+        if (storeView) storeView.style.display = "none";
+        if (adminView) adminView.style.display = "block";
+        if (adminUserName) adminUserName.textContent = `Hi, ${auth.user.name}`;
         loadAdminProducts();
     } else {
-        if (adminSection) adminSection.style.display = "none";
-        if (aboutSection) aboutSection.style.display = "block";
-        if (contactSection) contactSection.style.display = "block";
-        if (navAbout) navAbout.style.display = "block";
-        if (navContact) navContact.style.display = "block";
-        if (footerCompany) footerCompany.style.display = "block";
+        if (adminView) adminView.style.display = "none";
+        if (storeView) storeView.style.display = "block";
     }
 }
 
@@ -64,6 +56,7 @@ function updateNavAuth() {
     const navAuth = document.getElementById("navAuth");
     const navUser = document.getElementById("navUser");
     const userNameDisplay = document.getElementById("userNameDisplay");
+    const goAdminBtn = document.getElementById("goAdminBtn");
 
     if (auth?.user) {
         if (navAuth) navAuth.style.display = "none";
@@ -72,9 +65,13 @@ function updateNavAuth() {
             navUser.style.alignItems = "center";
         }
         if (userNameDisplay) userNameDisplay.textContent = `Hi, ${auth.user.name}`;
+        if (goAdminBtn) {
+            goAdminBtn.style.display = auth.user.role === "Admin" ? "inline-block" : "none";
+        }
     } else {
         if (navAuth) navAuth.style.display = "flex";
         if (navUser) navUser.style.display = "none";
+        if (goAdminBtn) goAdminBtn.style.display = "none";
     }
 }
 
@@ -411,6 +408,24 @@ document.getElementById("logoutBtn")?.addEventListener("click", () => {
     renderCart();
     updateCartCount();
     showToast("Logged out");
+});
+
+document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
+    clearAuth();
+    showAdminUI(false);
+    loadProducts();
+    renderCart();
+    updateCartCount();
+    showToast("Logged out");
+});
+
+document.getElementById("adminViewStoreBtn")?.addEventListener("click", () => {
+    showAdminUI(false);
+    loadProducts();
+});
+
+document.getElementById("goAdminBtn")?.addEventListener("click", () => {
+    showAdminUI(true);
 });
 
 // ——— Admin: Product CRUD ———

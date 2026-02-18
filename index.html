@@ -25,8 +25,8 @@
                 <ul class="navbar-nav ms-auto align-items-lg-center gap-3">
                     <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="#shop">Shop</a></li>
-                    <li class="nav-item" id="navAbout"><a class="nav-link" href="#about">About Us</a></li>
-                    <li class="nav-item" id="navContact"><a class="nav-link" href="#contact">Contact Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact Us</a></li>
                     <li class="nav-item" id="navAuth">
                         <button class="btn btn-outline-maroon btn-sm" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
                         <button class="btn btn-maroon btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
@@ -56,58 +56,6 @@
         </div>
     </section>
 
-    <!-- Admin: Product Management (visible only when Admin logged in) -->
-    <section id="adminSection" class="py-5" style="display: none;">
-        <div class="container py-4">
-            <h2 class="section-title text-maroon mb-4">Product Management</h2>
-            <div class="card p-4 mb-4 admin-card">
-                <h3 class="h6 text-white mb-3">Add New Product</h3>
-                <form id="addProductForm">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-gray-300">Name</label>
-                            <input type="text" class="form-control form-control-dark" name="name" required placeholder="Product name">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-gray-300">Price (₱)</label>
-                            <input type="number" class="form-control form-control-dark" name="price" step="0.01" min="0" required placeholder="0.00">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label text-gray-300">Description</label>
-                            <textarea class="form-control form-control-dark" name="description" rows="2" required placeholder="Product description"></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-gray-300">Image</label>
-                            <input type="file" class="form-control form-control-dark" name="image" accept="image/*">
-                        </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <button type="submit" class="btn btn-maroon"><i class="bi bi-plus-lg me-1"></i> Add Product</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="card p-4 admin-card">
-                <h3 class="h6 text-white mb-3">All Products</h3>
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover">
-                        <thead>
-                            <tr>
-                                <th>Image</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Price</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminProductTable">
-                            <tr><td colspan="5" class="text-center text-gray-500">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Featured / Shop Section -->
     <section id="shop" class="py-5">
         <div class="container py-5">
@@ -118,7 +66,7 @@
         </div>
     </section>
 
-    <!-- About Us Section (hidden when Admin) -->
+    <!-- About Us Section -->
     <section id="about" class="py-5 bg-dark">
         <div class="container py-5">
             <h2 class="section-title text-center text-maroon mb-5">About Us</h2>
@@ -155,7 +103,7 @@
         </div>
     </section>
 
-    <!-- Contact Us Section (hidden when Admin) -->
+    <!-- Contact Us Section -->
     <section id="contact" class="py-5">
         <div class="container py-5">
             <h2 class="section-title text-center text-maroon mb-5">Contact Us</h2>
@@ -222,7 +170,7 @@
                         <li><a href="#shop">All Products</a></li>
                     </ul>
                 </div>
-                <div class="col-md-2" id="footerCompany">
+                <div class="col-md-2">
                     <h6 class="text-uppercase text-gray-500 mb-3">Company</h6>
                     <ul class="list-unstyled">
                         <li><a href="#about">About Us</a></li>
@@ -246,6 +194,68 @@
     </footer>
     </div><!-- end storeView -->
 
+    <!-- Admin View (Admin only) -->
+    <div id="adminView" style="display: none;">
+        <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="#">FRANCINE — Admin</a>
+                <div class="navbar-nav ms-auto align-items-center gap-3">
+                    <span class="text-gray-400" id="adminUserName"></span>
+                    <button class="btn btn-outline-maroon btn-sm" id="adminViewStoreBtn">View Store</button>
+                    <button class="btn btn-outline-maroon btn-sm" id="adminLogoutBtn">Logout</button>
+                </div>
+            </div>
+        </nav>
+        <div class="container py-5 mt-5">
+            <h1 class="section-title text-maroon mb-4">Product Management</h1>
+            <div class="card p-4 mb-5 admin-card">
+                <h2 class="h5 text-white mb-4">Add New Product</h2>
+                <form id="addProductForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-gray-300">Name</label>
+                            <input type="text" class="form-control form-control-dark" name="name" required placeholder="Product name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-gray-300">Price</label>
+                            <input type="number" class="form-control form-control-dark" name="price" step="0.01" min="0" required placeholder="99.99">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-gray-300">Description</label>
+                            <textarea class="form-control form-control-dark" name="description" rows="2" required placeholder="Product description"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-gray-300">Image</label>
+                            <input type="file" class="form-control form-control-dark" name="image" accept="image/*">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-maroon"><i class="bi bi-plus-lg me-1"></i> Add Product</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card p-4 admin-card">
+                <h2 class="h5 text-white mb-4">All Products</h2>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminProductTable">
+                            <tr><td colspan="5" class="text-center text-gray-500">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div><!-- end adminView -->
+
     <!-- Edit Product Modal -->
     <div class="modal fade" id="editProductModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -266,7 +276,7 @@
                             <textarea class="form-control form-control-dark" id="editProductDescription" rows="2" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-gray-300">Price (₱)</label>
+                            <label class="form-label text-gray-300">Price</label>
                             <input type="number" class="form-control form-control-dark" id="editProductPrice" step="0.01" min="0" required>
                         </div>
                         <div class="mb-3">
@@ -380,7 +390,7 @@
             <div class="cart-footer mt-auto pt-4">
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-gray-400">Subtotal</span>
-                    <span class="fw-bold" id="cartTotal">₱0.00</span>
+                    <span class="fw-bold" id="cartTotal">$0.00</span>
                 </div>
                 <button class="btn btn-maroon w-100" id="checkoutBtn">Proceed to Checkout</button>
             </div>

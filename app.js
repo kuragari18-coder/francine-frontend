@@ -3,9 +3,7 @@
  * Connected to backend API
  */
 
-const API_BASE = (window.location.origin && window.location.origin !== "file://")
-    ? window.location.origin
-    : "https://fran-bac.onrender.com/";
+const API_BASE = "https://fran-bac.onrender.com";
 const API_PRODUCTS = `${API_BASE}/api/products`;
 const API_ORDER = `${API_BASE}/api/order`;
 const API_AUTH = `${API_BASE}/api/auth`;

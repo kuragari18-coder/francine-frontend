@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Francine — Tech E-Commerce</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Store View (Customer) -->
+    <div id="storeView">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">FRANCINE</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-3">
+                    <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#shop">Shop</a></li>
+                    <li class="nav-item" id="navAbout"><a class="nav-link" href="#about">About Us</a></li>
+                    <li class="nav-item" id="navContact"><a class="nav-link" href="#contact">Contact Us</a></li>
+                    <li class="nav-item" id="navAuth">
+                        <button class="btn btn-outline-maroon btn-sm" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+                        <button class="btn btn-maroon btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
+                    </li>
+                    <li class="nav-item" id="navUser" style="display:none;">
+                        <span class="text-gray-400 me-2" id="userNameDisplay"></span>
+                        <button class="btn btn-outline-maroon btn-sm" id="logoutBtn">Logout</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-cart position-relative" id="cartBtn" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+                            <i class="bi bi-bag-heart-fill"></i>
+                            <span class="cart-count position-absolute top-0 start-100 translate-middle badge rounded-pill" id="cartCount">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h1 class="hero-title">Cutting-Edge Tech, Today</h1>
+            <p class="hero-subtitle">The latest in AI, wearables, smart home & more</p>
+            <a href="#shop" class="btn btn-maroon btn-lg mt-3">Shop Now</a>
+        </div>
+    </section>
+
+    <!-- Admin: Product Management (visible only when Admin logged in) -->
+    <section id="adminSection" class="py-5" style="display: none;">
+        <div class="container py-4">
+            <h2 class="section-title text-maroon mb-4">Product Management</h2>
+            <div class="card p-4 mb-4 admin-card">
+                <h3 class="h6 text-white mb-3">Add New Product</h3>
+                <form id="addProductForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-gray-300">Name</label>
+                            <input type="text" class="form-control form-control-dark" name="name" required placeholder="Product name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-gray-300">Price (₱)</label>
+                            <input type="number" class="form-control form-control-dark" name="price" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-gray-300">Description</label>
+                            <textarea class="form-control form-control-dark" name="description" rows="2" required placeholder="Product description"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-gray-300">Image</label>
+                            <input type="file" class="form-control form-control-dark" name="image" accept="image/*">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-maroon"><i class="bi bi-plus-lg me-1"></i> Add Product</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card p-4 admin-card">
+                <h3 class="h6 text-white mb-3">All Products</h3>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminProductTable">
+                            <tr><td colspan="5" class="text-center text-gray-500">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured / Shop Section -->
+    <section id="shop" class="py-5">
+        <div class="container py-5">
+            <h2 class="section-title text-center mb-5">Technology Products</h2>
+            <div class="row g-4" id="productGrid">
+                <!-- Products injected by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Us Section (hidden when Admin) -->
+    <section id="about" class="py-5 bg-dark">
+        <div class="container py-5">
+            <h2 class="section-title text-center text-maroon mb-5">About Us</h2>
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <h3 class="h5 text-gray-300 mb-3">Our Mission</h3>
+                    <p class="text-gray-300 mb-4">Francine is your trusted source for the newest technology. We curate the finest selection of AI gadgets, smart devices, wearables, and cutting-edge electronics so you stay ahead of the curve.</p>
+                    <p class="text-gray-300 mb-0">From neural interface headsets to quantum-ready laptops, we bring tomorrow's tech to your doorstep today. Every product is hand-picked for innovation, quality, and real-world impact.</p>
+                </div>
+                <div class="col-lg-6">
+                    <h3 class="h5 text-gray-300 mb-3">Why Choose Us</h3>
+                    <ul class="about-features list-unstyled">
+                        <li><i class="bi bi-check-circle-fill text-maroon me-2"></i>Expert curation of the latest tech</li>
+                        <li><i class="bi bi-check-circle-fill text-maroon me-2"></i>Fast, reliable shipping worldwide</li>
+                        <li><i class="bi bi-check-circle-fill text-maroon me-2"></i>24/7 support & hassle-free returns</li>
+                        <li><i class="bi bi-check-circle-fill text-maroon me-2"></i>Verified authenticity on every item</li>
+                    </ul>
+                    <div class="about-stats d-flex gap-4 flex-wrap mt-4">
+                        <div class="stat-item">
+                            <span class="stat-number text-maroon">20+</span>
+                            <span class="stat-label text-gray-400">Tech Products</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number text-maroon">15K+</span>
+                            <span class="stat-label text-gray-400">Happy Customers</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number text-maroon">50+</span>
+                            <span class="stat-label text-gray-400">Countries</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Us Section (hidden when Admin) -->
+    <section id="contact" class="py-5">
+        <div class="container py-5">
+            <h2 class="section-title text-center text-maroon mb-5">Contact Us</h2>
+            <div class="row g-5 justify-content-center">
+                <div class="col-lg-5">
+                    <div class="contact-info">
+                        <h3 class="h5 text-white mb-4">Get in Touch</h3>
+                        <div class="contact-item mb-4">
+                            <i class="bi bi-geo-alt-fill text-maroon me-3"></i>
+                            <span class="text-gray-300">Kawit, Pagadian City</span>
+                        </div>
+                        <div class="contact-item mb-4">
+                            <i class="bi bi-envelope-fill text-maroon me-3"></i>
+                            <a href="mailto:hello@francine.tech" class="text-gray-300">hello@francine.tech</a>
+                        </div>
+                        <div class="contact-item mb-4">
+                            <i class="bi bi-telephone-fill text-maroon me-3"></i>
+                            <a href="tel:+15551234567" class="text-gray-300">+1 (555) 123-4567</a>
+                        </div>
+                        <div class="contact-item">
+                            <i class="bi bi-clock-fill text-maroon me-3"></i>
+                            <span class="text-gray-300">Mon–Fri 9AM–6PM • Sat 10AM–4PM</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <form class="contact-form card p-4" id="contactForm">
+                        <div class="mb-3">
+                            <label for="contactName" class="form-label text-gray-300">Name</label>
+                            <input type="text" class="form-control" id="contactName" required placeholder="Your name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactEmail" class="form-label text-gray-300">Email</label>
+                            <input type="email" class="form-control" id="contactEmail" required placeholder="your@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactSubject" class="form-label text-gray-300">Subject</label>
+                            <input type="text" class="form-control" id="contactSubject" placeholder="How can we help?">
+                        </div>
+                        <div class="mb-4">
+                            <label for="contactMessage" class="form-label text-gray-300">Message</label>
+                            <textarea class="form-control" id="contactMessage" rows="4" required placeholder="Your message..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-maroon w-100">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer py-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h5 class="text-maroon fw-bold mb-3">FRANCINE</h5>
+                    <p class="text-gray-400 small">Your trusted source for cutting-edge technology and tomorrow's gadgets.</p>
+                </div>
+                <div class="col-md-2">
+                    <h6 class="text-uppercase text-gray-500 mb-3">Shop</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#shop">New Arrivals</a></li>
+                        <li><a href="#shop">Best Sellers</a></li>
+                        <li><a href="#shop">All Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2" id="footerCompany">
+                    <h6 class="text-uppercase text-gray-500 mb-3">Company</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#">FAQs</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-uppercase text-gray-500 mb-3">Newsletter</h6>
+                    <form class="newsletter-form">
+                        <div class="input-group">
+                            <input type="email" class="form-control" placeholder="Your email" required>
+                            <button class="btn btn-maroon" type="submit">Subscribe</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <hr class="my-4 border-secondary">
+            <p class="text-center text-gray-500 small mb-0">&copy; 2025 Francine. All rights reserved.</p>
+        </div>
+    </footer>
+    </div><!-- end storeView -->
+
+    <!-- Edit Product Modal -->
+    <div class="modal fade" id="editProductModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-dark">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white">Edit Product</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProductForm">
+                        <input type="hidden" id="editProductId">
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Name</label>
+                            <input type="text" class="form-control form-control-dark" id="editProductName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Description</label>
+                            <textarea class="form-control form-control-dark" id="editProductDescription" rows="2" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Price (₱)</label>
+                            <input type="number" class="form-control form-control-dark" id="editProductPrice" step="0.01" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Replace Image (optional)</label>
+                            <input type="file" class="form-control form-control-dark" id="editProductImage" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-maroon w-100">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-dark">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white">Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Email</label>
+                            <input type="email" class="form-control form-control-dark" id="loginEmail" required placeholder="your@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Password</label>
+                            <input type="password" class="form-control form-control-dark" id="loginPassword" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-maroon w-100">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal (Customer only) -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-dark">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white">Register</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Name</label>
+                            <input type="text" class="form-control form-control-dark" id="registerName" required placeholder="Your name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Email</label>
+                            <input type="email" class="form-control form-control-dark" id="registerEmail" required placeholder="your@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-gray-300">Password (min 6 chars)</label>
+                            <input type="password" class="form-control form-control-dark" id="registerPassword" required minlength="6" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-maroon w-100">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal fade" id="checkoutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--gray-900); border: 1px solid var(--gray-800);">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white">Checkout</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="checkoutForm">
+                        <div class="mb-3">
+                            <label for="checkoutName" class="form-label text-gray-300">Name *</label>
+                            <input type="text" class="form-control form-control-dark" id="checkoutName" required placeholder="Your full name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkoutEmail" class="form-label text-gray-300">Email</label>
+                            <input type="email" class="form-control form-control-dark" id="checkoutEmail" placeholder="your@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkoutPhone" class="form-label text-gray-300">Phone</label>
+                            <input type="tel" class="form-control form-control-dark" id="checkoutPhone" placeholder="+1 555 123 4567">
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkoutAddress" class="form-label text-gray-300">Shipping Address</label>
+                            <textarea class="form-control form-control-dark" id="checkoutAddress" rows="2" placeholder="Street, City, Country"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-maroon w-100">Place Order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Your Cart</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div id="cartItems">
+                <!-- Cart items injected by JS -->
+            </div>
+            <div class="cart-footer mt-auto pt-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-gray-400">Subtotal</span>
+                    <span class="fw-bold" id="cartTotal">₱0.00</span>
+                </div>
+                <button class="btn btn-maroon w-100" id="checkoutBtn">Proceed to Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -28,22 +28,10 @@ function clearAuth() {
     updateNavAuth();
 }
 
-function showAdminUI(show) {
-    const storeView = document.getElementById("storeView");
-    const adminView = document.getElementById("adminView");
-    const adminUserName = document.getElementById("adminUserName");
-    const auth = getAuth();
-    const isAdmin = auth?.user?.role === "Admin";
-
-    if (show && isAdmin) {
-        if (storeView) storeView.style.display = "none";
-        if (adminView) adminView.style.display = "block";
-        if (adminUserName) adminUserName.textContent = `Hi, ${auth.user.name}`;
-        loadAdminProducts();
-    } else {
-        if (adminView) adminView.style.display = "none";
-        if (storeView) storeView.style.display = "block";
-    }
+function updateAdminShopUI() {
+    const isAdmin = getAuth()?.user?.role === "Admin";
+    const addProductBtn = document.getElementById("addProductBtn");
+    if (addProductBtn) addProductBtn.style.display = isAdmin ? "block" : "none";
 }
 
 function getAuthToken() {
@@ -56,8 +44,6 @@ function updateNavAuth() {
     const navAuth = document.getElementById("navAuth");
     const navUser = document.getElementById("navUser");
     const userNameDisplay = document.getElementById("userNameDisplay");
-    const goAdminBtn = document.getElementById("goAdminBtn");
-
     if (auth?.user) {
         if (navAuth) navAuth.style.display = "none";
         if (navUser) {
@@ -65,14 +51,11 @@ function updateNavAuth() {
             navUser.style.alignItems = "center";
         }
         if (userNameDisplay) userNameDisplay.textContent = `Hi, ${auth.user.name}`;
-        if (goAdminBtn) {
-            goAdminBtn.style.display = auth.user.role === "Admin" ? "inline-block" : "none";
-        }
     } else {
         if (navAuth) navAuth.style.display = "flex";
         if (navUser) navUser.style.display = "none";
-        if (goAdminBtn) goAdminBtn.style.display = "none";
     }
+    updateAdminShopUI();
 }
 
 // Fallback products when API is unavailable — Modern tech products
@@ -100,6 +83,7 @@ const FALLBACK_PRODUCTS = [
 ];
 
 let cart = JSON.parse(localStorage.getItem("francine_cart")) || [];
+let productsCache = [];
 
 // ——— Product Loading ———
 async function loadProducts() {
@@ -122,38 +106,69 @@ async function loadProducts() {
         _id: (p._id || p.id || "").toString(),
         image: p.imageUrl || p.image,
         price: Number(p.price) || 0,
+        description: p.description || "",
     }));
+    productsCache = products;
+
+    const isAdmin = getAuth()?.user?.role === "Admin";
 
     grid.innerHTML = products
         .map(
-            (p) => `
+            (p) => {
+                const imgHtml = p.image
+                    ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" class="product-image">`
+                    : `<div class="product-placeholder"><i class="bi ${p.icon || "bi-cpu"}"></i></div>`;
+                const actionsHtml = isAdmin
+                    ? `
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-sm btn-outline-maroon flex-grow-1 btn-edit-in-shop" data-product-id="${escapeHtml(p._id)}"><i class="bi bi-pencil me-1"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger btn-delete-in-shop" data-product-id="${escapeHtml(p._id)}" data-product-name="${escapeHtml(p.name)}"><i class="bi bi-trash"></i></button>
+                    </div>
+                `
+                    : `
+                    <button class="btn-add-cart w-100" data-product-id="${escapeHtml(p._id)}" data-product-name="${escapeHtml(p.name)}" data-product-price="${p.price}" data-product-image="${escapeHtml(p.image || "")}">
+                        <i class="bi bi-bag-plus me-1"></i> Add to Cart
+                    </button>
+                `;
+                return `
         <div class="col-sm-6 col-lg-4">
             <div class="product-card card">
                 <div class="product-image-wrap">
-                    ${p.image ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" class="product-image">` : `<div class="product-placeholder"><i class="bi ${p.icon || "bi-cpu"}"></i></div>`}
+                    ${imgHtml}
                 </div>
                 <div class="card-body">
                     <h5 class="product-name">${escapeHtml(p.name)}</h5>
                     <p class="product-price mb-3">₱${(p.price || 0).toFixed(2)}</p>
-                    <button class="btn-add-cart" data-product-id="${escapeHtml(p._id)}" data-product-name="${escapeHtml(p.name)}" data-product-price="${p.price}">
-                        <i class="bi bi-bag-plus me-1"></i> Add to Cart
-                    </button>
+                    ${actionsHtml}
                 </div>
             </div>
         </div>
-    `
+    `;
+            }
         )
         .join("");
 
-    // Attach add-to-cart handlers
-    grid.querySelectorAll(".btn-add-cart").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const id = btn.dataset.productId;
-            const name = btn.dataset.productName;
-            const price = parseFloat(btn.dataset.productPrice);
-            addToCart(id, name, price);
+    if (isAdmin) {
+        grid.querySelectorAll(".btn-edit-in-shop").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const p = productsCache.find((x) => String(x._id) === btn.dataset.productId);
+                if (p) openEditProductModal(p);
+            });
         });
-    });
+        grid.querySelectorAll(".btn-delete-in-shop").forEach((btn) => {
+            btn.addEventListener("click", () => deleteAdminProduct(btn.dataset.productId, btn.dataset.productName));
+        });
+    } else {
+        grid.querySelectorAll(".btn-add-cart").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const id = btn.dataset.productId;
+                const name = btn.dataset.productName;
+                const price = parseFloat(btn.dataset.productPrice);
+                const image = btn.dataset.productImage || "";
+                addToCart(id, name, price, image);
+            });
+        });
+    }
 }
 
 function escapeHtml(text) {
@@ -164,12 +179,12 @@ function escapeHtml(text) {
 }
 
 // ——— Cart Logic ———
-function addToCart(id, name, price) {
+function addToCart(id, name, price, image) {
     const existing = cart.find((i) => i.id === id);
     if (existing) {
         existing.qty += 1;
     } else {
-        cart.push({ id, name, price, qty: 1 });
+        cart.push({ id, name, price, qty: 1, image: image || "" });
     }
     saveCart();
     renderCart();
@@ -215,11 +230,13 @@ function renderCart() {
 
     container.innerHTML = cart
         .map(
-            (item) => `
+            (item) => {
+                const imgHtml = item.image
+                    ? `<img src="${escapeHtml(item.image)}" alt="" class="cart-item-img">`
+                    : `<div class="product-placeholder cart-item-img"><i class="bi bi-gem text-maroon"></i></div>`;
+                return `
         <div class="cart-item">
-            <div class="product-placeholder cart-item-img">
-                <i class="bi bi-gem text-maroon"></i>
-            </div>
+            <div class="cart-item-img-wrap">${imgHtml}</div>
             <div class="cart-item-details">
                 <div class="cart-item-name">${escapeHtml(item.name)}</div>
                 <div class="cart-item-price">₱${item.price.toFixed(2)} × ${item.qty}</div>
@@ -228,7 +245,8 @@ function renderCart() {
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
-    `
+    `;
+            }
         )
         .join("");
 
@@ -356,9 +374,8 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
             setAuth(data.token, data.user);
             bootstrap.Modal.getInstance(document.getElementById("loginModal"))?.hide();
             e.target.reset();
+            loadProducts();
             if (data.user.role === "Admin") {
-                showAdminUI(true);
-                loadProducts();
                 showToast(`Welcome, ${data.user.name}`);
                 return;
             }
@@ -403,76 +420,19 @@ document.getElementById("registerForm")?.addEventListener("submit", async (e) =>
 // ——— Auth: Logout ———
 document.getElementById("logoutBtn")?.addEventListener("click", () => {
     clearAuth();
-    showAdminUI(false);
+    updateAdminShopUI();
     loadProducts();
     renderCart();
     updateCartCount();
     showToast("Logged out");
 });
 
-document.getElementById("adminLogoutBtn")?.addEventListener("click", () => {
-    clearAuth();
-    showAdminUI(false);
-    loadProducts();
-    renderCart();
-    updateCartCount();
-    showToast("Logged out");
+// ——— Admin: Add Product button ———
+document.getElementById("addProductBtn")?.addEventListener("click", () => {
+    new bootstrap.Modal(document.getElementById("addProductModal")).show();
 });
 
-document.getElementById("adminViewStoreBtn")?.addEventListener("click", () => {
-    showAdminUI(false);
-    loadProducts();
-});
-
-document.getElementById("goAdminBtn")?.addEventListener("click", () => {
-    showAdminUI(true);
-});
-
-// ——— Admin: Product CRUD ———
-let adminProductsCache = [];
-
-async function loadAdminProducts() {
-    const tbody = document.getElementById("adminProductTable");
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Loading...</td></tr>';
-
-    try {
-        const res = await fetch(API_PRODUCTS);
-        const products = res.ok ? await res.json() : [];
-        adminProductsCache = products;
-
-        if (products.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No products yet. Add one above.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = products.map((p) => `
-            <tr>
-                <td>${p.imageUrl ? `<img src="${escapeHtml(p.imageUrl)}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;">` : '<span class="text-gray-500">—</span>'}</td>
-                <td>${escapeHtml(p.name)}</td>
-                <td class="text-gray-400" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.description)}</td>
-                <td class="text-maroon fw-bold">₱${Number(p.price).toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-maroon me-1 btn-edit-product" data-id="${escapeHtml(p._id)}"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-sm btn-danger btn-delete-product" data-id="${escapeHtml(p._id)}" data-name="${escapeHtml(p.name)}"><i class="bi bi-trash"></i></button>
-                </td>
-            </tr>
-        `).join("");
-
-        tbody.querySelectorAll(".btn-edit-product").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const p = adminProductsCache.find((x) => String(x._id) === btn.dataset.id);
-                if (p) openEditProductModal(p);
-            });
-        });
-        tbody.querySelectorAll(".btn-delete-product").forEach((btn) => {
-            btn.addEventListener("click", () => deleteAdminProduct(btn.dataset.id, btn.dataset.name));
-        });
-    } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load products</td></tr>';
-    }
-}
-
+// ——— Admin: Product CRUD (in shop) ———
 document.getElementById("addProductForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -490,7 +450,7 @@ document.getElementById("addProductForm")?.addEventListener("submit", async (e) 
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
             form.reset();
-            loadAdminProducts();
+            bootstrap.Modal.getInstance(document.getElementById("addProductModal"))?.hide();
             loadProducts();
             showToast("Product added!");
         } else {
@@ -526,7 +486,6 @@ document.getElementById("editProductForm")?.addEventListener("submit", async (e)
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
             bootstrap.Modal.getInstance(document.getElementById("editProductModal"))?.hide();
-            loadAdminProducts();
             loadProducts();
             showToast("Product updated!");
         } else {
@@ -544,7 +503,6 @@ async function deleteAdminProduct(id, name) {
         const res = await fetch(`${API_PRODUCTS}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-            loadAdminProducts();
             loadProducts();
             showToast("Product deleted");
         } else {
@@ -555,12 +513,6 @@ async function deleteAdminProduct(id, name) {
 
 // ——— Init ———
 document.addEventListener("DOMContentLoaded", () => {
-    const auth = getAuth();
-    if (auth?.user?.role === "Admin") {
-        showAdminUI(true);
-    } else {
-        showAdminUI(false);
-    }
     updateNavAuth();
     loadProducts();
     renderCart();

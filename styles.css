@@ -408,12 +408,27 @@ body {
     border-bottom: 1px solid var(--gray-800);
 }
 
+.cart-item-img-wrap {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--gray-800);
+}
+
+.cart-item-img-wrap .cart-item-img,
 .cart-item-img {
     width: 64px;
     height: 64px;
     object-fit: cover;
     border-radius: 8px;
     background: var(--gray-800);
+}
+
+.cart-item-img-wrap .product-placeholder {
+    width: 64px;
+    height: 64px;
 }
 
 .cart-item-details {

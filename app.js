@@ -84,6 +84,60 @@ const FALLBACK_PRODUCTS = [
 
 let cart = JSON.parse(localStorage.getItem("francine_cart")) || [];
 let productsCache = [];
+let revealObserver = null;
+
+function setButtonLoading(button, isLoading, loadingText = "Please wait...") {
+    if (!button) return;
+    if (isLoading) {
+        if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${escapeHtml(loadingText)}`;
+    } else {
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+    }
+}
+
+function setGlobalLoading(message = "Loading...") {
+    let overlay = document.getElementById("globalLoadingOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "globalLoadingOverlay";
+        overlay.className = "global-loading-overlay";
+        overlay.innerHTML = `
+            <div class="global-loading-content">
+                <div class="spinner-border text-light" role="status" aria-hidden="true"></div>
+                <p class="global-loading-text mb-0"></p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    const text = overlay.querySelector(".global-loading-text");
+    if (text) text.textContent = message;
+    overlay.classList.add("show");
+}
+
+function clearGlobalLoading() {
+    const overlay = document.getElementById("globalLoadingOverlay");
+    if (overlay) overlay.classList.remove("show");
+}
+
+function observeRevealElements(root = document) {
+    if (!revealObserver) return;
+    root.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+}
+
+function normalizeImageUrl(imagePath) {
+    if (!imagePath) return "";
+    const value = String(imagePath).trim();
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
+    if (value.startsWith("/")) return `${API_BASE}${value}`;
+    return `${API_BASE}/${value}`;
+}
 
 // ——— Product Loading ———
 async function loadProducts() {
@@ -104,7 +158,7 @@ async function loadProducts() {
     products = products.map((p) => ({
         ...p,
         _id: (p._id || p.id || "").toString(),
-        image: p.imageUrl || p.image,
+        image: normalizeImageUrl(p.imageUrl || p.image),
         price: Number(p.price) || 0,
         description: p.description || "",
     }));
@@ -114,7 +168,7 @@ async function loadProducts() {
 
     grid.innerHTML = products
         .map(
-            (p) => {
+            (p, idx) => {
                 const imgHtml = p.image
                     ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" class="product-image">`
                     : `<div class="product-placeholder"><i class="bi ${p.icon || "bi-cpu"}"></i></div>`;
@@ -131,7 +185,7 @@ async function loadProducts() {
                     </button>
                 `;
                 return `
-        <div class="col-sm-6 col-lg-4">
+        <div class="col-sm-6 col-lg-4 reveal reveal-delay" style="--reveal-delay:${Math.min(idx * 70, 420)}ms;">
             <div class="product-card card">
                 <div class="product-image-wrap">
                     ${imgHtml}
@@ -147,6 +201,7 @@ async function loadProducts() {
             }
         )
         .join("");
+    observeRevealElements(grid);
 
     if (isAdmin) {
         grid.querySelectorAll(".btn-edit-in-shop").forEach((btn) => {
@@ -180,11 +235,22 @@ function escapeHtml(text) {
 
 // ——— Cart Logic ———
 function addToCart(id, name, price, image) {
+    const auth = getAuth();
+    if (!auth?.user) {
+        showToast("You need to log in first");
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("loginModal"))?.show();
+        return;
+    }
+    if (auth.user.role === "Admin") {
+        showToast("Admins cannot add products to cart");
+        return;
+    }
+
     const existing = cart.find((i) => i.id === id);
     if (existing) {
         existing.qty += 1;
     } else {
-        cart.push({ id, name, price, qty: 1, image: image || "" });
+        cart.push({ id, name, price, qty: 1, image: normalizeImageUrl(image || "") });
     }
     saveCart();
     renderCart();
@@ -359,6 +425,8 @@ document.getElementById("checkoutForm")?.addEventListener("submit", submitChecko
 // ——— Auth: Login ———
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    setButtonLoading(submitBtn, true, "Logging in...");
     const email = document.getElementById("loginEmail")?.value?.trim();
     const password = document.getElementById("loginPassword")?.value;
 
@@ -385,6 +453,8 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         }
     } catch (err) {
         showToast("Unable to connect. Open http://localhost:5000 with backend running.");
+    } finally {
+        setButtonLoading(submitBtn, false);
     }
 });
 
@@ -418,12 +488,15 @@ document.getElementById("registerForm")?.addEventListener("submit", async (e) =>
 });
 
 // ——— Auth: Logout ———
-document.getElementById("logoutBtn")?.addEventListener("click", () => {
+document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+    setGlobalLoading("Logging out...");
+    await new Promise((resolve) => setTimeout(resolve, 500));
     clearAuth();
     updateAdminShopUI();
     loadProducts();
     renderCart();
     updateCartCount();
+    clearGlobalLoading();
     showToast("Logged out");
 });
 
@@ -454,7 +527,12 @@ document.getElementById("addProductForm")?.addEventListener("submit", async (e) 
             loadProducts();
             showToast("Product added!");
         } else {
-            showToast(data.message || "Failed to add product");
+            if (res.status === 401) {
+                clearAuth();
+                showToast("Admin session expired. Please log in again.");
+            } else {
+                showToast(data.message || "Failed to add product");
+            }
         }
     } catch (err) { showToast("Unable to connect"); }
 });
@@ -489,7 +567,12 @@ document.getElementById("editProductForm")?.addEventListener("submit", async (e)
             loadProducts();
             showToast("Product updated!");
         } else {
-            showToast(data.message || "Failed to update product");
+            if (res.status === 401) {
+                clearAuth();
+                showToast("Admin session expired. Please log in again.");
+            } else {
+                showToast(data.message || "Failed to update product");
+            }
         }
     } catch (err) { showToast("Unable to connect"); }
 });
@@ -506,7 +589,12 @@ async function deleteAdminProduct(id, name) {
             loadProducts();
             showToast("Product deleted");
         } else {
-            showToast(data.message || "Failed to delete product");
+            if (res.status === 401) {
+                clearAuth();
+                showToast("Admin session expired. Please log in again.");
+            } else {
+                showToast(data.message || "Failed to delete product");
+            }
         }
     } catch (err) { showToast("Unable to connect"); }
 }
@@ -527,4 +615,18 @@ document.addEventListener("DOMContentLoaded", () => {
             if (target) target.scrollIntoView({ behavior: "smooth" });
         });
     });
+
+    // Scroll reveal animation
+    revealObserver = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("revealed");
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        },
+        { threshold: 0.12 }
+    );
+    observeRevealElements(document);
 });

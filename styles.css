@@ -496,3 +496,63 @@ body {
     border: 1px solid var(--maroon);
     color: var(--white);
 }
+
+/* Loading States */
+.global-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.global-loading-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.global-loading-content {
+    background: var(--gray-900);
+    border: 1px solid var(--gray-700);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.global-loading-text {
+    color: var(--gray-200);
+    font-weight: 500;
+}
+
+/* Entrance Animations */
+.reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal-delay {
+    transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.hero-title {
+    animation: heroFloat 4s ease-in-out infinite;
+}
+
+@keyframes heroFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}

@@ -243,6 +243,8 @@
                         <div class="mb-3">
                             <label class="form-label text-gray-300">Image</label>
                             <input type="file" class="form-control form-control-dark" name="image" accept="image/*">
+                            <small class="text-gray-500">or provide an image URL (recommended for cross-device visibility)</small>
+                            <input type="url" class="form-control form-control-dark mt-2" name="imageUrl" placeholder="https://example.com/product.jpg">
                         </div>
                         <button type="submit" class="btn btn-maroon w-100">Add Product</button>
                     </form>
@@ -277,6 +279,8 @@
                         <div class="mb-3">
                             <label class="form-label text-gray-300">Replace Image (optional)</label>
                             <input type="file" class="form-control form-control-dark" id="editProductImage" accept="image/*">
+                            <small class="text-gray-500">or set a new image URL</small>
+                            <input type="url" class="form-control form-control-dark mt-2" id="editProductImageUrl" placeholder="https://example.com/product.jpg">
                         </div>
                         <button type="submit" class="btn btn-maroon w-100">Save Changes</button>
                     </form>

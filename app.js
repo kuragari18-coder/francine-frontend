@@ -216,6 +216,11 @@ async function loadProducts() {
     } else {
         grid.querySelectorAll(".btn-add-cart").forEach((btn) => {
             btn.addEventListener("click", () => {
+                if (!getAuth()?.user) {
+                    showToast("Sign in first so you can purchase a product");
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById("loginModal"))?.show();
+                    return;
+                }
                 const id = btn.dataset.productId;
                 const name = btn.dataset.productName;
                 const price = parseFloat(btn.dataset.productPrice);
@@ -237,7 +242,7 @@ function escapeHtml(text) {
 function addToCart(id, name, price, image) {
     const auth = getAuth();
     if (!auth?.user) {
-        showToast("You need to log in first");
+        showToast("Sign in first so you can purchase a product");
         bootstrap.Modal.getOrCreateInstance(document.getElementById("loginModal"))?.show();
         return;
     }
@@ -513,6 +518,7 @@ document.getElementById("addProductForm")?.addEventListener("submit", async (e) 
     formData.append("name", form.name.value.trim());
     formData.append("description", form.description.value.trim());
     formData.append("price", form.price.value);
+    if (form.imageUrl?.value?.trim()) formData.append("imageUrl", form.imageUrl.value.trim());
     if (form.image.files[0]) formData.append("image", form.image.files[0]);
 
     const token = getAuthToken();
@@ -543,6 +549,7 @@ function openEditProductModal(product) {
     document.getElementById("editProductDescription").value = product.description || "";
     document.getElementById("editProductPrice").value = product.price ?? "";
     document.getElementById("editProductImage").value = "";
+    document.getElementById("editProductImageUrl").value = product.image || "";
     new bootstrap.Modal(document.getElementById("editProductModal")).show();
 }
 
@@ -553,6 +560,8 @@ document.getElementById("editProductForm")?.addEventListener("submit", async (e)
     formData.append("name", document.getElementById("editProductName").value.trim());
     formData.append("description", document.getElementById("editProductDescription").value.trim());
     formData.append("price", document.getElementById("editProductPrice").value);
+    const imageUrlInput = document.getElementById("editProductImageUrl");
+    if (imageUrlInput?.value?.trim()) formData.append("imageUrl", imageUrlInput.value.trim());
     const fileInput = document.getElementById("editProductImage");
     if (fileInput.files[0]) formData.append("image", fileInput.files[0]);
 
